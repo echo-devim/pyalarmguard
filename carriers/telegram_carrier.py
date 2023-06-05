@@ -4,42 +4,49 @@ import json
 import sys
 import os
 from sensors.sensor_microphone import SensorMicrophone
+from sensors.sensor_camera import SensorCamera
 import config
 
-class NotifierTelegram():
+class CarrierTelegram():
 
     def __init__(self, logger):
+        self.name = "telegram"
         self.logger = logger
         self.max_attempts = 5
         self.attempt_delay_sec = 10
         # Read configuration to retrieve API Key and chat id
-        with open(os.getcwd()+'/config.json') as config:
-            file_contents = config.read()
-        jconfig = json.loads(file_contents)
-        if ("telegram" not in jconfig["notifiers"]):
-            print("Telegram configuration not found in config.json, missing mandatory apiKey and chatId params")
+        if (config.tg_api_key == ""):
+            print("Telegram configuration not found in config, missing mandatory api key and chat id params")
             sys.exit(1)
-        jconfig = jconfig["notifiers"]["telegram"]
-        api_key=jconfig["apiKey"]
-        self.apiurl = f'https://api.telegram.org/bot{api_key}'
-        self.chat_id = jconfig["chatId"]
+
+        self.apiurl = f'https://api.telegram.org/bot{config.tg_api_key}'
+        self.chat_id = config.tg_chat_id
         self.last_msg_id = -1
         super().__init__()
     
     def notify(self, message, attachment=None):
         """
         Send notification, return true if succeeded.
-        Note: attachments are considered audio file at the moment!!
+        Note: attachments type is detected by extension
         """
         attempts = self.max_attempts
         while(attempts > 0):
             try:
-                response = requests.post(f"{self.apiurl}/sendMessage", json={'chat_id': self.chat_id, 'text': message})
+                if (message != None):
+                    response = requests.post(f"{self.apiurl}/sendMessage", json={'chat_id': self.chat_id, 'text': message})
+                
                 if (attachment != None):
                     with open(attachment, mode='rb') as file:
-                        voice_file = file.read()
-                    url = f"{self.apiurl}/sendVoice?chat_id={self.chat_id}"
-                    file = {'voice': ("record.wav", voice_file)}
+                        binfile = file.read()
+                    
+                    filetype = attachment[-3:]
+                    if (filetype == "wav"):
+                        url = f"{self.apiurl}/sendVoice?chat_id={self.chat_id}"
+                        file = {'voice': ("record.wav", binfile)}
+                    elif (filetype == "jpg"):
+                        url = f"{self.apiurl}/sendPhoto?chat_id={self.chat_id}"
+                        file = {'photo': binfile}
+
                     response = requests.post(url, files=file, timeout=3)
 
                 if (response.status_code == 200):              
@@ -81,11 +88,14 @@ class NotifierTelegram():
             self.notify(f"online, alarm detection = {config.alarm_detection} with threshold = {config.db_threshold}")
         elif (last_cmd == "/poweroff"):
             os.system("poweroff")
+        elif (last_cmd == "/getphoto"):
+            cam = SensorCamera(self.logger)
+            self.notify(None, cam.getEvidenceFile())
         elif ("/getaudio" in last_cmd):
             try:
                 mic = SensorMicrophone(self.logger)
                 mic.record(int(last_cmd.split(" ")[1]))
-                self.notify(f"mic recorded audio", mic.getEvidenceFile())
+                self.notify("mic recorded audio", mic.getEvidenceFile())
             except Exception as ex:
                 print(ex)
         elif ("/setdblevel" in last_cmd):

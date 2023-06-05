@@ -1,1 +1,4 @@
 pyaudio==0.2.13
+imutils
+numpy
+cv2

@@ -3,6 +3,7 @@ import struct
 import math
 import pyaudio
 import os
+import config
 
 class SensorMicrophone:
 
@@ -18,45 +19,11 @@ class SensorMicrophone:
                 break
         if self.dev_index == -1:
             logger.error("Cannot find USB microphone")
-        self.wavfile = '/opt/pyalarmguard/record.wav'
+        self.wavfile = f'{config.data_directory}/record.wav'
         self.last_peak_dB = 0
     
     def getEvidenceFile(self):
         return self.wavfile
-
-    #def getPeakdB(self, wavfile):
-    #    """ Simple function to get peak dB in the wav file """
-    #    # Open the audio file
-    #    with wave.open(wavfile, 'r') as audio:
-    #        # Extract the raw audio data
-    #        raw_data = audio.readframes(audio.getnframes())
-#
-    #    # Convert the raw audio data to a list of integers
-    #    samples = struct.unpack('<{n}i'.format(n=audio.getnframes()), raw_data)
-#
-    #    # Find the peak sample
-    #    peak = max(samples)
-#
-    #    # Calculate the reference value based on the bit depth of the audio file
-    #    reference_value = 2**(audio.getsampwidth() * 8 - 1)
-#
-    #    # Calculate the peak value in dBFS, using the maximum possible sample value as the reference value
-    #    peak_dB = 20 * math.log10(peak / reference_value)
-#
-    #    return peak_dB
-#
-#
-    #def alarm(self):
-    #    """ Detect if audio from mic contains alarm sound """
-    #    #peak_dB = self.getPeakdB(self.wavfile)
-    #    #self.last_peak_dB = peak_dB
-    #    #if (peak_dB > self.threshold):
-    #    #    self.logger.info(f"Registered peak with dB {peak_dB} exceeding threshold ({self.threshold})")
-    #    #    return True
-    #    #return False
-#
-    #    
-    #    return self.wavfile
 
     def record(self, seconds):
         if os.path.exists(self.wavfile):
