@@ -1,4 +1,5 @@
 #! /bin/sh
+# This script acquires images from camera connected to Raspberry PI with ribbon cable
 # Needs root permissions
 
 v4l2-ctl --device /dev/video0 --set-fmt-video=width=640,height=480,pixelformat=UYVY
