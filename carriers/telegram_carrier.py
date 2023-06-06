@@ -3,6 +3,7 @@ import time
 import json
 import sys
 import os
+import subprocess
 from sensors.sensor_microphone import SensorMicrophone
 from sensors.sensor_camera import SensorCamera
 import config
@@ -85,16 +86,27 @@ class CarrierTelegram():
         elif (last_cmd == "/start"):
             config.alarm_detection = True
         elif (last_cmd == "/status"):
-            self.notify(f"online, alarm detection = {config.alarm_detection} with threshold = {config.db_threshold}")
+            temp = subprocess.check_output(['vcgencmd','measure_temp']).decode("utf-8")
+            self.notify(f"online, {temp}, alarm detection = {config.alarm_detection} with threshold = {config.db_threshold}")
         elif (last_cmd == "/poweroff"):
             os.system("poweroff")
+        elif ("/play" in last_cmd):
+            config.alarm_detection = False
+            sound_index = 5
+            if " " in last_cmd:
+                sound_index = int(last_cmd.split(" ")[1])
+            os.system(f"cvlc --play-and-exit /opt/data/{sound_index}.wav &")
+            self.notify("Reproducing audio, stopped alarm detection")
         elif (last_cmd == "/getphoto"):
             cam = SensorCamera(self.logger)
             self.notify(None, cam.getEvidenceFile())
         elif ("/getaudio" in last_cmd):
             try:
                 mic = SensorMicrophone(self.logger)
-                mic.record(int(last_cmd.split(" ")[1]))
+                seconds = 5
+                if " " in last_cmd:
+                    seconds = int(last_cmd.split(" ")[1])
+                mic.record(seconds)
                 self.notify("mic recorded audio", mic.getEvidenceFile())
             except Exception as ex:
                 print(ex)
