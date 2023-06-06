@@ -107,7 +107,7 @@ class CarrierTelegram():
                 if " " in last_cmd:
                     seconds = int(last_cmd.split(" ")[1])
                 mic.record(seconds)
-                self.notify("mic recorded audio", mic.getEvidenceFile())
+                self.notify("mic recorded audio", mic.getEvidenceFile(format="opus"))
             except Exception as ex:
                 print(ex)
         elif ("/setdblevel" in last_cmd):

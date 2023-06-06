@@ -22,8 +22,13 @@ class SensorMicrophone:
         self.wavfile = f'{config.data_directory}/record.wav'
         self.last_peak_dB = 0
     
-    def getEvidenceFile(self):
-        return self.wavfile
+    def getEvidenceFile(self, format="wav"):
+        evidence = self.wavfile
+        if format == "opus":
+            evidence = self.wavfile + ".ogg"
+            os.system(f"ffmpeg -i {self.wavfile} -ar 48000 -ac 2 -acodec libopus -ab 256k {evidence}")
+            os.remove(self.wavfile)
+        return evidence
 
     def record(self, seconds):
         if os.path.exists(self.wavfile):
