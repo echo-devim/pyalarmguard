@@ -3,7 +3,6 @@ import time
 import json
 import sys
 import os
-import subprocess
 from sensors.sensor_microphone import SensorMicrophone
 from sensors.sensor_camera import SensorCamera
 import config
@@ -86,8 +85,7 @@ class CarrierTelegram():
         elif (last_cmd == "/start"):
             config.alarm_detection = True
         elif (last_cmd == "/status"):
-            temp = subprocess.check_output(['vcgencmd','measure_temp']).decode("utf-8")
-            self.notify(f"online, {temp}, alarm detection = {config.alarm_detection} with threshold = {config.db_threshold}")
+            self.notify(f"online, alarm detection = {config.alarm_detection} with threshold = {config.db_threshold}")
         elif (last_cmd == "/poweroff"):
             os.system("poweroff")
         elif ("/play" in last_cmd):
