@@ -1,15 +1,15 @@
 from __future__ import absolute_import
 from __future__ import print_function
 import binascii
-import dejavu.decoder as decoder
+import detectors.dejavu3.dejavu.decoder as decoder
 import logging
 import multiprocessing
 import os
 import traceback
 import sys
 
-from dejavu import fingerprint
-from dejavu.database import Database
+from detectors.dejavu3.dejavu import fingerprint
+from detectors.dejavu3.dejavu.database import Database
 from six.moves import range
 from six.moves import zip
 

@@ -1,4 +1,4 @@
-from detectors.dejavu3.dejavu import DejavuDetection
+from detectors.dejavu3.dejavud import DejavuDetection
 from detectors.objdetection.objdetection import ObjectDetection
 from detectors.audiostats.audiostats import AudioStats
 import os
@@ -10,16 +10,17 @@ class Detector:
         self.logger = logger
         self.mic = microphone
         self.cam = camera
-        self.djv = DejavuDetection(logger)
+        #self.djv = DejavuDetection(logger)
         self.objdet = ObjectDetection(logger)
         self.message = ""
 
-    def __alarmDetectionCorrelation(self):
-        res = self.djv.detect(self.mic.getEvidenceFile(), threshold=50)
-        if (res != None) and (res["sound_name"] == "alarm"):
-            self.message = "Alarm detected"
-            return True
-        return False
+    #def __alarmDetectionCorrelation(self):
+    #    """ This method still doesn't work, keeping here for future improvements """
+    #    res = self.djv.detect(self.mic.getEvidenceFile(), threshold=50)
+    #    if (res != None) and (res["sound_name"] == "alarm"):
+    #        self.message = "Alarm detected"
+    #        return True
+    #    return False
 
     def __alarmDetectionDBLevel(self):
         # Perform audio fingerprinting and calculate similarity
@@ -38,13 +39,14 @@ class Detector:
         return False
 
 
-    def alarmDetection(self, type="correlation"):
+    def alarmDetection(self, type="dblevel"):
         # Record audio sample from microphone
         self.mic.record(config.recording_seconds)
-        if (type == "correlation"):
-            return self.__alarmDetectionCorrelation()
-        else:
-            return self.__alarmDetectionDBLevel()
+        #if (type == "correlation"):
+        #    print("ATTENTION: Audio correlation still not working")
+        #    return self.__alarmDetectionCorrelation()
+        #else:
+        return self.__alarmDetectionDBLevel()
 
 
     def humanDetection(self):

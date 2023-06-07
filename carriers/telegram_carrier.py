@@ -6,13 +6,14 @@ import os
 from sensors.sensor_microphone import SensorMicrophone
 from sensors.sensor_camera import SensorCamera
 import config
+import threading
 
 class CarrierTelegram():
 
     def __init__(self, logger):
         self.name = "telegram"
         self.logger = logger
-        self.max_attempts = 5
+        self.max_attempts = 10
         self.attempt_delay_sec = 10
         # Read configuration to retrieve API Key and chat id
         if (config.tg_api_key == ""):
@@ -40,13 +41,15 @@ class CarrierTelegram():
                         binfile = file.read()
                     
                     filetype = attachment[-3:]
-                    if (filetype == "wav"):
+                    if (filetype == "wav") or (filetype == "ogg"):
                         url = f"{self.apiurl}/sendVoice?chat_id={self.chat_id}"
-                        file = {'voice': ("record.wav", binfile)}
+                        file = {'voice': (f"record.{filetype}", binfile)}
                     elif (filetype == "jpg"):
                         url = f"{self.apiurl}/sendPhoto?chat_id={self.chat_id}"
                         file = {'photo': binfile}
-
+                    else:
+                        self.logger.error(f"Unknown attachment extension type ({filetype})")
+                    
                     response = requests.post(url, files=file, timeout=3)
 
                 if (response.status_code == 200):              
@@ -75,6 +78,12 @@ class CarrierTelegram():
                     return message["text"]
         return ""
     
+    def backgroundAudioRecording(self, mic, seconds):
+        mic.record(seconds)
+        self.notify("mic recorded audio", mic.getEvidenceFile(format="opus"))
+        with config.mic_mutex:
+            config.is_recording = False
+
     def doAction(self):
         last_cmd = self.getLastCommand()
         if last_cmd == "":
@@ -82,8 +91,10 @@ class CarrierTelegram():
         self.logger.info(f"Received command: {last_cmd}")
         if (last_cmd == "/stop"):
             config.alarm_detection = False
+            config.human_detection = False
         elif (last_cmd == "/start"):
             config.alarm_detection = True
+            config.human_detection = True
         elif (last_cmd == "/status"):
             self.notify(f"online, alarm detection = {config.alarm_detection} with threshold = {config.db_threshold}")
         elif (last_cmd == "/poweroff"):
@@ -104,13 +115,15 @@ class CarrierTelegram():
                 seconds = 5
                 if " " in last_cmd:
                     seconds = int(last_cmd.split(" ")[1])
-                mic.record(seconds)
-                self.notify("mic recorded audio", mic.getEvidenceFile(format="opus"))
+                self.logger.info("Starting background recording")
+                with config.mic_mutex:
+                    config.is_recording = True
+                threading.Thread(target=self.backgroundAudioRecording, args=(mic, seconds)).start()
             except Exception as ex:
-                print(ex)
+                print(f"getaudio exception: {ex}")
         elif ("/setdblevel" in last_cmd):
             try:
                 config.db_threshold = float(last_cmd.split(" ")[1])
             except Exception as ex:
-                print(ex)
+                print(f"setdblevel exception: {ex}")
 

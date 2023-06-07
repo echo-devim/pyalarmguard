@@ -26,8 +26,7 @@ class SensorMicrophone:
         evidence = self.wavfile
         if format == "opus":
             evidence = self.wavfile + ".ogg"
-            os.system(f"ffmpeg -i {self.wavfile} -ar 48000 -ac 2 -acodec libopus -ab 256k {evidence}")
-            os.remove(self.wavfile)
+            os.system(f"ffmpeg -i {self.wavfile} -y -c:a libopus {evidence}")
         return evidence
 
     def record(self, seconds):
@@ -56,7 +55,6 @@ class SensorMicrophone:
         # stop the stream, close it, and terminate the pyaudio instantiation
         stream.stop_stream()
         stream.close()
-        self.audio.terminate()
 
         # save the audio frames as .wav file
         wavefile = wave.open(wav_output_filename,'wb')
@@ -65,6 +63,11 @@ class SensorMicrophone:
         wavefile.setframerate(samp_rate)
         wavefile.writeframes(b''.join(frames))
         wavefile.close()
+
+        # Remove noise with sox
+        #if os.path.exists(self.wavfile):
+        #    os.system(f"sox {self.wavfile} -n trim 0 0.5 noiseprof {config.data_directory}/noise.prof")
+        #    os.system(f"sox {self.wavfile} {self.wavfile} noisered {config.data_directory}/noise.prof 0.21")
 
 
 

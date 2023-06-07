@@ -5,9 +5,9 @@ import sys
 import warnings
 import argparse
 
-from dejavu.dejavu import Dejavu
-from dejavu.recognize import FileRecognizer
-from dejavu.recognize import MicrophoneRecognizer
+from detectors.dejavu3.dejavu.dejavu import Dejavu
+from detectors.dejavu3.dejavu.recognize import FileRecognizer
+from detectors.dejavu3.dejavu.recognize import MicrophoneRecognizer
 from argparse import RawTextHelpFormatter
 
 warnings.filterwarnings("ignore")

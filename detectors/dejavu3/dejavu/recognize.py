@@ -2,8 +2,8 @@ from __future__ import absolute_import
 
 import logging
 
-import dejavu.fingerprint as fingerprint
-import dejavu.decoder as decoder
+import detectors.dejavu3.dejavu.fingerprint as fingerprint
+import detectors.dejavu3.dejavu.decoder as decoder
 import numpy as np
 import pyaudio
 import time

@@ -7,6 +7,7 @@ from detectors.detector import Detector
 import sys
 import config
 import os
+from datetime import datetime
 
 def doActions(carriers):
     """ Perform actions request by user on communication channels """
@@ -50,12 +51,24 @@ def main():
             # Check if user requested some action to do
             doActions(carriers)
 
+            if config.capture_all:
+                if config.captures > 0:
+                    cam.takephoto()
+                    now = datetime.now()
+                    dt_string = now.strftime("%d-%m-%Y_%H:%M:%S")
+                    os.rename(cam.getEvidenceFile(), f"{config.photo_evidence_path}/photo{dt_string}.jpg")
+                else:
+                    config.capture_all = False
+                    config.captures = config.DEFAULT_CAPTURES
+
             # Perform detection with audio/image analysis
             if config.human_detection and detector.humanDetection():
                 notify(carriers, logger, detector.message, cam.getEvidenceFile())
-
-            if config.alarm_detection and detector.alarmDetection():
-                notify(carriers, logger, detector.message, mic.getEvidenceFile())
+                config.capture_all = True
+            
+            with config.mic_mutex:
+                if config.alarm_detection and (not config.is_recording) and detector.alarmDetection(type="dblevel"):
+                    notify(carriers, logger, detector.message, mic.getEvidenceFile(format="opus"))
 
         except Exception as ex:
             logger.info(f"Exception occurred: {ex}")
