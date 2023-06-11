@@ -20,7 +20,6 @@ class DejavuDetection:
         sound = self.djv.recognize(
             FileRecognizer, filepath
         )
-        print(sound)
         if (sound != None) and (sound["matches"] < threshold):
                 sound = None
         return sound

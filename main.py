@@ -67,7 +67,7 @@ def main():
                 config.capture_all = True
             
             with config.mic_mutex:
-                if config.alarm_detection and (not config.is_recording) and detector.alarmDetection(type="dblevel"):
+                if config.alarm_detection and (not config.is_recording) and detector.alarmDetection():
                     notify(carriers, logger, detector.message, mic.getEvidenceFile(format="opus"))
 
         except Exception as ex:

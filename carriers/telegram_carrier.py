@@ -92,6 +92,8 @@ class CarrierTelegram():
         if (last_cmd == "/stop"):
             config.alarm_detection = False
             config.human_detection = False
+        elif (last_cmd == "/stoph"):
+            config.human_detection = False
         elif (last_cmd == "/start"):
             config.alarm_detection = True
             config.human_detection = True

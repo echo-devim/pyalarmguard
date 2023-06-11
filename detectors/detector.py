@@ -4,25 +4,21 @@ from detectors.audiostats.audiostats import AudioStats
 import os
 import config
 
+
 class Detector:
 
     def __init__(self, logger, microphone, camera):
         self.logger = logger
         self.mic = microphone
         self.cam = camera
-        #self.djv = DejavuDetection(logger)
+        self.djv = DejavuDetection(logger)
         self.objdet = ObjectDetection(logger)
         self.message = ""
 
-    #def __alarmDetectionCorrelation(self):
-    #    """ This method still doesn't work, keeping here for future improvements """
-    #    res = self.djv.detect(self.mic.getEvidenceFile(), threshold=50)
-    #    if (res != None) and (res["sound_name"] == "alarm"):
-    #        self.message = "Alarm detected"
-    #        return True
-    #    return False
+    def __audioCorrelation(self):
+        return self.djv.detect(self.mic.getEvidenceFile(), threshold=0)
 
-    def __alarmDetectionDBLevel(self):
+    def __alarmDetection(self):
         # Perform audio fingerprinting and calculate similarity
         # Analyze audio for alarm sound
         audiostats = AudioStats()
@@ -39,14 +35,19 @@ class Detector:
         return False
 
 
-    def alarmDetection(self, type="dblevel"):
+    def alarmDetection(self):
         # Record audio sample from microphone
         self.mic.record(config.recording_seconds)
-        #if (type == "correlation"):
-        #    print("ATTENTION: Audio correlation still not working")
-        #    return self.__alarmDetectionCorrelation()
-        #else:
-        return self.__alarmDetectionDBLevel()
+        corr = self.__audioCorrelation()
+        print(f"Audio Correlation: {corr}")
+        # Check if audio is correlated to noise or environmental sounds
+        # if it isn't, check its db level
+        if (corr != None):
+            if corr["sound_name"].startswith("exclude"):
+                return False
+            elif corr["sound_name"].startswith("include"):
+                return True
+        return self.__alarmDetection()
 
 
     def humanDetection(self):

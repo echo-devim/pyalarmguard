@@ -1,4 +1,4 @@
 pyaudio==0.2.13
-imutils
-numpy
-cv2
+imutils==0.5.4
+numpy==1.23.5
+opencv-python==4.7.0.72

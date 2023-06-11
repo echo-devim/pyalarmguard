@@ -1,7 +1,6 @@
-config.json
-record.wav
 pyalarmguard.log
 __pycache__/
 *.py[cod]
-record.wav
 config.py
+.wav
+audio.db
