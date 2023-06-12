@@ -102,11 +102,11 @@ class CarrierTelegram():
         elif (last_cmd == "/poweroff"):
             os.system("poweroff")
         elif ("/play" in last_cmd):
-            config.alarm_detection = False
-            sound_index = 5
+            config.alarm_detection = False  # avoid false positive
+            sound_index = 1
             if " " in last_cmd:
                 sound_index = int(last_cmd.split(" ")[1])
-            os.system(f"cvlc --play-and-exit /opt/data/{sound_index}.wav &")
+            os.system(f"cvlc --play-and-exit {config.data_directory}/{sound_index}.wav &")
             self.notify("Reproducing audio, stopped alarm detection")
         elif (last_cmd == "/getphoto"):
             cam = SensorCamera(self.logger)
