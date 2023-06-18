@@ -34,7 +34,7 @@ class CarrierTelegram():
         while(attempts > 0):
             try:
                 if (message != None):
-                    response = requests.post(f"{self.apiurl}/sendMessage", json={'chat_id': self.chat_id, 'text': message})
+                    response = requests.post(f"{self.apiurl}/sendMessage", json={'chat_id': self.chat_id, 'text': message}, timeout=5)
                 
                 if (attachment != None):
                     with open(attachment, mode='rb') as file:
@@ -50,11 +50,12 @@ class CarrierTelegram():
                     else:
                         self.logger.error(f"Unknown attachment extension type ({filetype})")
                     
-                    response = requests.post(url, files=file, timeout=3)
+                    response = requests.post(url, files=file, timeout=5)
 
-                if (response.status_code == 200):              
+                if (response.status_code == 200):
                     return True
             except Exception as e:
+                self.logger.error(f"Cannot reach telegram server, exception occurred")
                 print(e)
             time.sleep(self.attempt_delay_sec)
             attempts -= 1
@@ -102,11 +103,11 @@ class CarrierTelegram():
         elif (last_cmd == "/poweroff"):
             os.system("poweroff")
         elif ("/play" in last_cmd):
-            config.alarm_detection = False  # avoid false positive
-            sound_index = 1
+            config.alarm_detection = False
+            sound_index = 5
             if " " in last_cmd:
                 sound_index = int(last_cmd.split(" ")[1])
-            os.system(f"cvlc --play-and-exit {config.data_directory}/{sound_index}.wav &")
+            os.system(f"cvlc --play-and-exit /opt/data/{sound_index}.wav &")
             self.notify("Reproducing audio, stopped alarm detection")
         elif (last_cmd == "/getphoto"):
             cam = SensorCamera(self.logger)

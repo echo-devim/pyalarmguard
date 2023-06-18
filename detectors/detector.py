@@ -1,9 +1,10 @@
 from detectors.dejavu3.dejavud import DejavuDetection
 from detectors.objdetection.objdetection import ObjectDetection
 from detectors.audiostats.audiostats import AudioStats
+from detectors.signalprocessing import SignalProcessing
 import os
 import config
-
+import glob
 
 class Detector:
 
@@ -11,12 +12,21 @@ class Detector:
         self.logger = logger
         self.mic = microphone
         self.cam = camera
-        self.djv = DejavuDetection(logger)
+        self.sigproc = SignalProcessing()
         self.objdet = ObjectDetection(logger)
         self.message = ""
 
     def __audioCorrelation(self):
-        return self.djv.detect(self.mic.getEvidenceFile(), threshold=0)
+        match = None
+        for wavfile in glob.glob(f"{config.data_directory}/samples/*.wav"):
+            label = os.path.basename(wavfile).split(".")[0]
+            similarity = self.sigproc.calculateSimilarity(self.mic.getEvidenceFile(), wavfile, False, True)
+            if similarity > 0.85:
+                if not label.startswith("noise_white"):
+                    self.logger.info(f"Similarity with {label} : {similarity}")
+                match = label
+                break
+        return match
 
     def __alarmDetection(self):
         # Perform audio fingerprinting and calculate similarity
@@ -30,23 +40,20 @@ class Detector:
             os.remove(wavfile)
         print(f"RMS dB level: {dblevel}")
         if (dblevel > config.db_threshold):
-            self.message = f"Alarm detected with db level {dblevel}"
-            return True
+            # Avoid false positive performing audio correlation
+            corr = self.__audioCorrelation()
+            print(f"Correlation result: {corr}")
+            # Check if audio is correlated to some kind of known noise
+            if corr == None or not corr.startswith("noise"):
+                self.message = f"Alarm detected with db level {dblevel}"
+                return True
         return False
 
 
     def alarmDetection(self):
         # Record audio sample from microphone
         self.mic.record(config.recording_seconds)
-        corr = self.__audioCorrelation()
-        print(f"Audio Correlation: {corr}")
-        # Check if audio is correlated to noise or environmental sounds
-        # if it isn't, check its db level
-        if (corr != None):
-            if corr["sound_name"].startswith("exclude"):
-                return False
-            elif corr["sound_name"].startswith("include"):
-                return True
+        # Perform alarm detection
         return self.__alarmDetection()
 
 

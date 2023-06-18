@@ -28,8 +28,20 @@ Before to run the project you need to rename `config_example.py` into `config.py
 
 ## Technical Details
 
+### Alarm detection
 The `detectors` are wrapped by `Detector` class (in `detectory.py` file).
-Alarm detection is performed first using an audio correlation algorithm (dejavu3) and then measuring db level.
+Alarm detection is performed first applying a sinc filter and then measuring db level of wav file.
+Finally is applied a custom audio correlation algorithm to exclude false positives (i.e. matches for environmental sounds).
+
+The audio correlation is performed translating the amplitude values into positive values. Thus, the minimum value of the signal (negative number) is summed to all the amplitudes.
+Then the time information is discarded by re-ordering all amplitudes in descending order. In this way the same sound recorded at different moment can be recognized.
+The resulting curve is then compared to other curves representing the sounds in the dataset calculating the differences with some tollerance.
+The final result is a percentage of similarity between two sounds.
+
+### Alarm Correlation with Dejavu3 (archivied)
+Previously the project was based on dejavu3 algorithm, but after some tests it showed little effectiveness with short audios.
+
+Actually the repo still includes Dejavu3 audio correlator, but it's not used by the project anymore.
 
 Dejavu3 is derived from [dejavu](https://github.com/worldveil/dejavu), but modified to use a local sqlite database `audio.db`.
 
@@ -39,7 +51,11 @@ If the audio recorded from mic results to have a correlation to a known sound (f
 
 When the dejavu3 algorhitm fails to classify the recorded audio, then it's applied a sinc filter and measured RMS dB level. If the dB level is greather then a defined threshold, the alarm notification will be triggered.
 
-Logs are saved in `pyalarmguard.log` file in the project directory.
+### Object detection
+For object detection is used the MobileNetSSD model for the Single Shot Detector (SSD) that can infer very fast objects in a image.
+Object that can be detected: background,aeroplane,bicycle,bird,boat,bottle,bus,car,cat,chair,cow,diningtable,dog,horse,motorbike,person,pottedplant,sheep,sofa,train,tvmonitor
+
+When human is detected with a confidence greather than 60% the user is notified and a sequence of 120 images per second (by default) is acquired from camera.
 
 ## Supported Commands
 Telegram carrire implements several commands that are described below:
@@ -53,3 +69,5 @@ Telegram carrire implements several commands that are described below:
 *  `/getphoto` get a photo from camera
 *  `/getaudio n` get an audio of n seconds (recording is done with a background thread)
 *  `/setdblevel n` set the db level threshold for alarm detection
+
+Logs are saved in `pyalarmguard.log` file in the project directory.
