@@ -6,7 +6,7 @@ from threading import Lock
 data_directory = "/opt/data"
 
 # SOUND
-db_threshold = -76 # dB level threshold, lower values increase sensitivity
+db_threshold = -75 # dB level threshold, lower values increase sensitivity
 high_pass_filter_cutoff = "3k"
 alarm_detection = True # Enable/Disable audio analysis for alarm detection
 recording_seconds = 1 # Number of seconds to record for alarm detection

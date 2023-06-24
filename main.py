@@ -65,7 +65,7 @@ def main():
             if config.human_detection and detector.humanDetection():
                 notify(carriers, logger, detector.message, cam.getEvidenceFile())
                 config.capture_all = True
-            
+
             with config.mic_mutex:
                 if config.alarm_detection and (not config.is_recording) and detector.alarmDetection():
                     notify(carriers, logger, detector.message, mic.getEvidenceFile(format="opus"))

@@ -12,6 +12,7 @@ class Detector:
         self.logger = logger
         self.mic = microphone
         self.cam = camera
+        #self.djv = DejavuDetection(logger)
         self.sigproc = SignalProcessing()
         self.objdet = ObjectDetection(logger)
         self.message = ""
@@ -26,6 +27,7 @@ class Detector:
                     self.logger.info(f"Similarity with {label} : {similarity}")
                 match = label
                 break
+        #return self.djv.detect(self.mic.getEvidenceFile(), threshold=0)
         return match
 
     def __alarmDetection(self):
@@ -57,13 +59,20 @@ class Detector:
         return self.__alarmDetection()
 
 
-    def humanDetection(self):
-        self.cam.takephoto()
+    def objDetection(self, label, imagepath = ""):
+        if imagepath == "":
+            self.cam.takephoto()
         for e in self.objdet.detect(self.cam.getEvidenceFile()):
             conf = e["confidence"]
-            if (e["label"] == "person") and (conf > config.object_detection_threshold):
-                self.message = f"Human detected with confidence {conf}"
+            if (e["label"] == label) and (conf > config.object_detection_threshold):
+                self.message = f"{label} detected with confidence {conf}"
                 return True
         return False
+
+    def humanDetection(self, imagepath = ""):
+        return self.objDetection("person", imagepath)
+
+    #def catDetection(self, imagepath = ""):
+    #    return self.objDetection("cat", imagepath)
 
 

@@ -23,6 +23,7 @@ class CarrierTelegram():
         self.apiurl = f'https://api.telegram.org/bot{config.tg_api_key}'
         self.chat_id = config.tg_chat_id
         self.last_msg_id = -1
+        self.startuptime = time.time()
         super().__init__()
     
     def notify(self, message, attachment=None):
@@ -93,20 +94,33 @@ class CarrierTelegram():
         if (last_cmd == "/stop"):
             config.alarm_detection = False
             config.human_detection = False
+            config.cat_detection = False
         elif (last_cmd == "/stoph"):
             config.human_detection = False
         elif (last_cmd == "/start"):
             config.alarm_detection = True
             config.human_detection = True
+            msg = "intrusion detection started"
+            self.logger.info(msg)
+            self.notify(msg)
         elif (last_cmd == "/status"):
             self.notify(f"online, alarm detection = {config.alarm_detection} with threshold = {config.db_threshold}")
         elif (last_cmd == "/poweroff"):
-            os.system("poweroff")
+            now = time.time()
+            elapsed_minutes = ((now - self.startuptime)/60)
+            # Shutdown the system only if was booted more than 5 minutes ago
+            if elapsed_minutes >= 5:
+                self.logger.info("powering off")
+                self.notify("bye")
+                os.system("poweroff")
+            else:
+                self.logger.info(f"Refuse to power off.. only {elapsed_minutes} minutes elapsed from startup")
         elif ("/play" in last_cmd):
             config.alarm_detection = False
-            sound_index = 5
+            sound_index = 1
             if " " in last_cmd:
                 sound_index = int(last_cmd.split(" ")[1])
+            os.system("killall vlc") # kill existing processes
             os.system(f"cvlc --play-and-exit /opt/data/{sound_index}.wav &")
             self.notify("Reproducing audio, stopped alarm detection")
         elif (last_cmd == "/getphoto"):
