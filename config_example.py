@@ -15,7 +15,7 @@ is_recording = False
 
 # IMAGE
 human_detection = True
-object_detection_threshold = 0.6 # detection probability threshold
+object_detection_threshold = 0.650 # detection probability threshold
 capture_all = False # Enable continous camera image acquisition
 DEFAULT_CAPTURES = 120
 captures = DEFAULT_CAPTURES # Number of photos to capture when a human is detected
