@@ -36,8 +36,7 @@ class ObjectDetection:
 
 		# grab the frame dimensions and convert it to a blob
 		#(h, w) = image.shape[:2]
-		blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)),
-		0.007843, (300, 300), 127.5)
+		blob = cv2.dnn.blobFromImage(cv2.resize(image, (300, 300)), 0.007843, (300, 300), (104.0, 177.0, 123.0))
 
 		# pass the blob through the network and obtain the detections and
 		# predictions
