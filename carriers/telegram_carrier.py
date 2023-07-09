@@ -68,17 +68,23 @@ class CarrierTelegram():
         This method assumes that the bot has only one client user.
         The bot can receive only messages starting with '/' (bot commands)
         """
-        response = requests.post(f"{self.apiurl}/getUpdates?offset=-1")
-        if (response.status_code == 200):
-            jres = json.loads(response.text)
-            if len(jres["result"]) > 0:
-                message = jres["result"][0]["message"]
-                msg_id = int(message["message_id"])
-                # Check if we found a new message
-                if (self.last_msg_id != msg_id):
-                    self.last_msg_id = msg_id
-                    return message["text"]
-        return ""
+        out = ""
+        try:
+            response = requests.post(f"{self.apiurl}/getUpdates?offset=-1")
+            if (response.status_code == 200):
+                jres = json.loads(response.text)
+                if len(jres["result"]) > 0:
+                    message = jres["result"][0]["message"]
+                    msg_id = int(message["message_id"])
+                    # Check if we found a new message
+                    if (self.last_msg_id != msg_id):
+                        self.last_msg_id = msg_id
+                        out = message["text"]
+            else:
+                out = f"Error: Received response code {response.status_code}"
+        except Exception as ex:
+            out = f"Exception: {ex}"
+        return out
     
     def backgroundAudioRecording(self, mic, seconds):
         mic.record(seconds)
@@ -109,12 +115,13 @@ class CarrierTelegram():
             now = time.time()
             elapsed_minutes = ((now - self.startuptime)/60)
             # Shutdown the system only if was booted more than 5 minutes ago
-            if elapsed_minutes >= 5:
+            # and pyalarmguard is in a "stop" status
+            if (config.alarm_detection == False) and (elapsed_minutes >= 5):
                 self.logger.info("powering off")
                 self.notify("bye")
                 os.system("poweroff")
             else:
-                self.logger.info(f"Refuse to power off.. only {elapsed_minutes} minutes elapsed from startup")
+                self.logger.info(f"Refuse to power off")
         elif ("/play" in last_cmd):
             config.alarm_detection = False
             sound_index = 1
@@ -143,4 +150,5 @@ class CarrierTelegram():
                 config.db_threshold = float(last_cmd.split(" ")[1])
             except Exception as ex:
                 print(f"setdblevel exception: {ex}")
-
+        else:
+            self.logger.error(f"Error occurred. {last_cmd}")
