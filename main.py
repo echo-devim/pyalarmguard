@@ -15,12 +15,16 @@ def doActions(carriers):
         c.doAction()
 
 def notify(carriers, logger, message, evidence):
-    """ Loop over carriers list and invoke their notification method """
+    """
+    When alarm is triggered, loop over carriers list and invoke their notification method
+    """
     logger.info(message)
     # Notify and (eventually) attach evidences
     for carrier in carriers:
         if not carrier.notify(message, evidence):
             logger.error("Cannot send notification")
+            # Call the default method when we're offline
+            carrier.doOfflineAction()
         else:
             logger.info(f"Notification sent using {carrier.name}")
 
@@ -69,6 +73,9 @@ def main():
             with config.mic_mutex:
                 if config.alarm_detection and (not config.is_recording) and detector.alarmDetection():
                     notify(carriers, logger, detector.message, mic.getEvidenceFile(format="opus"))
+                    # We heard a sound, it could be a false positive, take few images
+                    config.captures = 10
+                    config.capture_all = True
 
         except Exception as ex:
             logger.info(f"Exception occurred: {ex}")

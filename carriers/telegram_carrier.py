@@ -13,8 +13,8 @@ class CarrierTelegram():
     def __init__(self, logger):
         self.name = "telegram"
         self.logger = logger
-        self.max_attempts = 10
-        self.attempt_delay_sec = 10
+        self.max_attempts = 3
+        self.attempt_delay_sec = 5
         # Read configuration to retrieve API Key and chat id
         if (config.tg_api_key == ""):
             print("Telegram configuration not found in config, missing mandatory api key and chat id params")
@@ -62,6 +62,23 @@ class CarrierTelegram():
             attempts -= 1
         return False
     
+    def doOfflineAction(self):
+        """
+        Default method called when we're offline, thus we can't notify the user
+        """
+        self.logger.info("Performing offline action")
+        self.__playAudio("1")
+
+    def __playAudio(self, name):
+        """
+        Start vlc cli to play a sound
+        """
+        # Disable alarm detection to avoid false positives
+        config.alarm_detection = False
+        # Play input sound name
+        os.system("killall vlc") # kill existing processes
+        os.system(f"cvlc --play-and-exit {config.data_directory}/{name}.wav &")
+
     def getLastCommand(self):
         """
         Get latest message on the chat.
@@ -81,9 +98,9 @@ class CarrierTelegram():
                         self.last_msg_id = msg_id
                         out = message["text"]
             else:
-                out = f"Error: Received response code {response.status_code}"
+                self.logger.error(f"Error: Received response code {response.status_code}")
         except Exception as ex:
-            out = f"Exception: {ex}"
+            self.logger.error(f"Exception: {ex}")
         return out
     
     def backgroundAudioRecording(self, mic, seconds):
@@ -123,12 +140,10 @@ class CarrierTelegram():
             else:
                 self.logger.info(f"Refuse to power off")
         elif ("/play" in last_cmd):
-            config.alarm_detection = False
             sound_index = 1
             if " " in last_cmd:
                 sound_index = int(last_cmd.split(" ")[1])
-            os.system("killall vlc") # kill existing processes
-            os.system(f"cvlc --play-and-exit /opt/data/{sound_index}.wav &")
+            self.__playAudio(sound_index)
             self.notify("Reproducing audio, stopped alarm detection")
         elif (last_cmd == "/getphoto"):
             cam = SensorCamera(self.logger)
