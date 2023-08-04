@@ -21,8 +21,12 @@ def notify(carriers, logger, message, evidence):
     logger.info(message)
     # Notify and (eventually) attach evidences
     for carrier in carriers:
-        if not carrier.notify(message, evidence):
-            logger.error("Cannot send notification")
+        res = carrier.notify(message, evidence)
+        if not res or config.predefined_action:
+            if not res:
+                logger.error("Cannot send notification")
+            else:
+                logger.info("Executing pre-defined action")
             # Call the default method when we're offline
             carrier.doOfflineAction()
         else:
@@ -49,7 +53,7 @@ def main():
     mic = SensorMicrophone(logger)
 
     detector = Detector(logger, mic, cam)
-    
+
     while(True):
         try:
             # Check if user requested some action to do

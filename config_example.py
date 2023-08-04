@@ -4,6 +4,8 @@ from threading import Lock
 
 # GENERAL
 data_directory = "/opt/data"
+predefined_action = False
+stopped_alarm_reminder = 1 # Number of times the app should notify that alarm is stopped
 
 # SOUND
 db_threshold = -75 # dB level threshold, lower values increase sensitivity

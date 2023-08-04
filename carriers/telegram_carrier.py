@@ -24,6 +24,7 @@ class CarrierTelegram():
         self.chat_id = config.tg_chat_id
         self.last_msg_id = -1
         self.startuptime = time.time()
+        self.last_stop_cmd = None
         super().__init__()
     
     def notify(self, message, attachment=None):
@@ -77,7 +78,7 @@ class CarrierTelegram():
         config.alarm_detection = False
         # Play input sound name
         os.system("killall vlc") # kill existing processes
-        os.system(f"cvlc --play-and-exit {config.data_directory}/{name}.wav &")
+        os.system(f"XDG_RUNTIME_DIR=/run/user/1000 PULSE_RUNTIME_PATH=/run/user/1000/pulse/ /usr/bin/cvlc --play-and-exit {config.data_directory}/{name}.wav &")
 
     def getLastCommand(self):
         """
@@ -112,14 +113,26 @@ class CarrierTelegram():
     def doAction(self):
         last_cmd = self.getLastCommand()
         if last_cmd == "":
-            return
+            # Send the reminder that alarm is stopped if the user is not giving any command
+            now = time.time()
+            if config.alarm_detection == False and config.stopped_alarm_reminder > 0 and self.last_stop_cmd and ((now - self.last_stop_cmd)/60) > 60:
+                self.logger.info("Sending reminder that alarm is stopped")
+                self.notify("Alarm is stopped")
+                self.last_stop_cmd = now
+                config.stopped_alarm_reminder -= 1
+            return False
         self.logger.info(f"Received command: {last_cmd}")
         if (last_cmd == "/stop"):
             config.alarm_detection = False
             config.human_detection = False
-            config.cat_detection = False
+            config.stopped_alarm_reminder = 1
+            # Keep track of the last command received
+            self.last_stop_cmd = time.time()
         elif (last_cmd == "/stoph"):
             config.human_detection = False
+        elif (last_cmd == "/predef"):
+            config.predefined_action = not config.predefined_action
+            self.notify(f"predefined action set to: {config.predefined_action}")
         elif (last_cmd == "/start"):
             config.alarm_detection = True
             config.human_detection = True
@@ -139,6 +152,7 @@ class CarrierTelegram():
                 os.system("poweroff")
             else:
                 self.logger.info(f"Refuse to power off")
+                return False
         elif ("/play" in last_cmd):
             sound_index = 1
             if " " in last_cmd:
@@ -160,10 +174,15 @@ class CarrierTelegram():
                 threading.Thread(target=self.backgroundAudioRecording, args=(mic, seconds)).start()
             except Exception as ex:
                 print(f"getaudio exception: {ex}")
+                return False
         elif ("/setdblevel" in last_cmd):
             try:
                 config.db_threshold = float(last_cmd.split(" ")[1])
             except Exception as ex:
                 print(f"setdblevel exception: {ex}")
+                return False
         else:
             self.logger.error(f"Error occurred. {last_cmd}")
+            return False
+
+        return True
