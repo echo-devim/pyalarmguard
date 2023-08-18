@@ -24,7 +24,7 @@ class CarrierTelegram():
         self.chat_id = config.tg_chat_id
         self.last_msg_id = -1
         self.startuptime = time.time()
-        self.last_stop_cmd = None
+        self.last_stop_cmd = self.startuptime
         super().__init__()
     
     def notify(self, message, attachment=None):
