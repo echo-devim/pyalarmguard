@@ -21,7 +21,10 @@ The project aims to provide a general structure easy to customize, in order to i
 
 Install on the system the package `sox` and optionally `vlc`
 Then run `pip install -r requirements.txt`
-Please check also the requirements of the subproject dejavu3 in the `detectors/dejavu3/` directory.
+
+Copy the bash file `setup/startup.sh` into `/opt` directory. The bash script contains some workarounds to init the user session for pulse audio server and then starts the project.
+The project will run as non-root user, you must enable ssh-key authentication between root and pi local users.
+Copy the service `setup/alarmguard.service` in `/etc/systemd/system`, then run `systemctl daemon-reload` and `systemctl --now enable alarmguard`.
 
 Before to run the project you need to rename `config_example.py` into `config.py` in the root project directory adding the configuration for Telegram (api key and chat id).
 

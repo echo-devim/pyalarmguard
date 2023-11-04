@@ -1,0 +1,11 @@
+[Unit]
+Description=Alarm Guard
+After=multi-user.target
+
+[Service]
+Type=simple
+Restart=always
+ExecStart=/usr/bin/bash /opt/startup.sh
+
+[Install]
+WantedBy=sound.target
