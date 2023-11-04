@@ -14,6 +14,7 @@ class CarrierTelegram():
         self.name = "telegram"
         self.logger = logger
         self.max_attempts = 3
+        self.failed_connections = 0 # Failed connections to telegram servers
         self.attempt_delay_sec = 5
         # Read configuration to retrieve API Key and chat id
         if (config.tg_api_key == ""):
@@ -68,7 +69,7 @@ class CarrierTelegram():
         Default method called when we're offline, thus we can't notify the user
         """
         self.logger.info("Performing offline action")
-        self.__playAudio("1")
+        self.__playAudio("3")
 
     def __playAudio(self, name):
         """
@@ -78,7 +79,7 @@ class CarrierTelegram():
         config.alarm_detection = False
         # Play input sound name
         os.system("killall vlc") # kill existing processes
-        os.system(f"XDG_RUNTIME_DIR=/run/user/1000 PULSE_RUNTIME_PATH=/run/user/1000/pulse/ /usr/bin/cvlc --play-and-exit {config.data_directory}/{name}.wav &")
+        os.system(f"/usr/bin/cvlc --play-and-exit {config.data_directory}/{name}.wav &")
 
     def getLastCommand(self):
         """
@@ -87,8 +88,18 @@ class CarrierTelegram():
         The bot can receive only messages starting with '/' (bot commands)
         """
         out = ""
+        # if we already tried to reach telegram servers but failed several times, just wait a bit
+        if (self.failed_connections > 3):
+            # Use the same variable as counter
+            self.failed_connections += 1
+            if (self.failed_connections > 10):
+                # Reset, so the next time we'll try again to connect to telegram servers
+                self.failed_connections = 0
+            return out
+
         try:
             response = requests.post(f"{self.apiurl}/getUpdates?offset=-1")
+            self.failed_connections = 0
             if (response.status_code == 200):
                 jres = json.loads(response.text)
                 if len(jres["result"]) > 0:
@@ -101,6 +112,7 @@ class CarrierTelegram():
             else:
                 self.logger.error(f"Error: Received response code {response.status_code}")
         except Exception as ex:
+            self.failed_connections += 1
             self.logger.error(f"Exception: {ex}")
         return out
     

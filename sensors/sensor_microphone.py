@@ -1,28 +1,22 @@
 import wave
 import struct
 import math
-import pyaudio
 import os
 import config
+import subprocess
+import time
+
+# Remider: Do not use pyAudio because hangs the program when it fails to access the microphone
+# Use external utility instead
 
 class SensorMicrophone:
 
-    def __init__(self, logger, threshold = 91):
-        self.threshold = threshold
+    def __init__(self, logger):
         self.logger = logger
-        self.audio = pyaudio.PyAudio()
-        # Find USB Microphone device index
-        self.dev_index = -1
-        for ii in range(self.audio.get_device_count()):
-            if "USB PnP Sound Device" in self.audio.get_device_info_by_index(ii).get('name'):
-                self.dev_index = ii
-                break
-        if self.dev_index == -1:
-            logger.error("Cannot find USB microphone")
         self.wavfile = f'{config.data_directory}/record.wav'
-        self.last_peak_dB = 0
     
     def getEvidenceFile(self, format="wav"):
+        """ Returns the original wav file or converts it into opus codec (e.g. to send it on telegram) """
         evidence = self.wavfile
         if format == "opus":
             evidence = self.wavfile + ".ogg"
@@ -32,42 +26,30 @@ class SensorMicrophone:
     def record(self, seconds):
         if os.path.exists(self.wavfile):
             os.remove(self.wavfile)
-        form_1 = pyaudio.paInt16 # 16-bit resolution
-        chans = 1 # 1 channel
-        samp_rate = 44100 # 44.1kHz sampling rate
-        chunk = 4096 # 2^12 samples for buffer
-        record_secs = seconds # seconds to record
-        wav_output_filename = self.wavfile # name of .wav file
-        # create pyaudio stream
-        stream = self.audio.open(format = form_1,rate = samp_rate,channels = chans, \
-                            input_device_index = self.dev_index,input = True, \
-                            frames_per_buffer=chunk)
-        print("recording")
-        frames = []
 
-        # loop through stream and append audio chunks to frame array
-        for ii in range(0,int((samp_rate/chunk)*record_secs)):
-            data = stream.read(chunk, exception_on_overflow = False)
-            frames.append(data)
+        attempts = 3
 
-        print("finished recording")
+        while (attempts > 0):
+            # Record audio Signed 16 bit Little Endian, Rate 48000 Hz, Mono
+            subprocess.run(['arecord', "--duration", str(seconds), "--format", "dat", "--channels", "1", self.wavfile])
 
-        # stop the stream, close it, and terminate the pyaudio instantiation
-        stream.stop_stream()
-        stream.close()
+            # Check if output file exists and contains data
+            if not os.path.exists(self.wavfile) or (os.path.getsize(self.wavfile) < 10):
+                self.logger.error("Audio recording failed")
+            else:
+                return True
 
-        # save the audio frames as .wav file
-        wavefile = wave.open(wav_output_filename,'wb')
-        wavefile.setnchannels(chans)
-        wavefile.setsampwidth(self.audio.get_sample_size(form_1))
-        wavefile.setframerate(samp_rate)
-        wavefile.writeframes(b''.join(frames))
-        wavefile.close()
+            attempts -= 1
+            time.sleep(1)
+
+        self.logger.error("Failed all attempts to record audio")
 
         # Remove noise with sox
         #if os.path.exists(self.wavfile):
         #    os.system(f"sox {self.wavfile} -n trim 0 0.5 noiseprof {config.data_directory}/noise.prof")
         #    os.system(f"sox {self.wavfile} {self.wavfile} noisered {config.data_directory}/noise.prof 0.21")
+
+        return False
 
 
 
