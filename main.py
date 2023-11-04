@@ -8,6 +8,7 @@ import sys
 import config
 import os
 from datetime import datetime
+import traceback
 
 def doActions(carriers):
     """ Perform actions request by user on communication channels """
@@ -83,6 +84,7 @@ def main():
 
         except Exception as ex:
             logger.info(f"Exception occurred: {ex}")
+            traceback.print_exc() 
 
 
 if __name__ == "__main__":
