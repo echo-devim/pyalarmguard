@@ -12,6 +12,7 @@ class Detector:
         self.logger = logger
         self.mic = microphone
         self.cam = camera
+        self.audiostats = AudioStats(logger)
         #self.djv = DejavuDetection(logger)
         self.sigproc = SignalProcessing()
         self.objdet = ObjectDetection(logger)
@@ -33,15 +34,14 @@ class Detector:
     def __alarmDetection(self):
         # Perform audio fingerprinting and calculate similarity
         # Analyze audio for alarm sound
-        audiostats = AudioStats()
         # Keep only high frequencies (alarm sound)
         orig = self.mic.getEvidenceFile()
-        wavfile = audiostats.highPassFilter(orig)
-        dblevel = audiostats.getProperty(wavfile, "RMS lev dB")
+        wavfile = self.audiostats.highPassFilter(orig)
+        dblevel = self.audiostats.getProperty(wavfile, "RMS lev dB")
         if os.path.exists(wavfile):
             os.remove(wavfile)
         print(f"RMS dB level: {dblevel}")
-        if (dblevel > config.db_threshold):
+        if (dblevel != None) and (dblevel > config.db_threshold):
             # Avoid false positive performing audio correlation
             corr = self.__audioCorrelation()
             print(f"Correlation result: {corr}")
@@ -54,14 +54,21 @@ class Detector:
 
     def alarmDetection(self):
         # Record audio sample from microphone
-        self.mic.record(config.recording_seconds)
+        if not self.mic.record(config.recording_seconds):
+            self.logger.error("Microphone error, rebooting system")
+            os.system("reboot")
+            return False
         # Perform alarm detection
         return self.__alarmDetection()
 
 
     def objDetection(self, label, imagepath = ""):
         if imagepath == "":
-            self.cam.takephoto()
+            if not self.cam.takephoto():
+                self.logger.error("Failed to capture photo, rebooting system")
+                os.system("reboot")
+                return False
+
         for e in self.objdet.detect(self.cam.getEvidenceFile()):
             conf = e["confidence"]
             if (e["label"] == label) and (conf > config.object_detection_threshold):
