@@ -30,6 +30,9 @@ class SensorCamera:
             attempts -= 1
             time.sleep(1)
         
+        self.logger.error("Failed all attempts to take picture, rebooting..")
+        os.system("reboot")
+
         return False
 
 

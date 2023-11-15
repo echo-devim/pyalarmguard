@@ -55,8 +55,7 @@ class Detector:
     def alarmDetection(self):
         # Record audio sample from microphone
         if not self.mic.record(config.recording_seconds):
-            self.logger.error("Microphone error, rebooting system")
-            os.system("reboot")
+            self.logger.error("Microphone error")
             return False
         # Perform alarm detection
         return self.__alarmDetection()
@@ -65,8 +64,7 @@ class Detector:
     def objDetection(self, label, imagepath = ""):
         if imagepath == "":
             if not self.cam.takephoto():
-                self.logger.error("Failed to capture photo, rebooting system")
-                os.system("reboot")
+                self.logger.error("Failed to capture photo")
                 return False
 
         for e in self.objdet.detect(self.cam.getEvidenceFile()):
